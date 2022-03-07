@@ -9,12 +9,12 @@
 * The upload-limit can only be used for registered users. Files uploaded by unauthenticated users currently can't be tracked
 
 # ToDos
-* create user-based limits
-* track uploaded files from public users
-* publish extension
+* TODO: #1 create user-based limits
+* TODO: #2 track uploaded files from public users
+* TODO: #3 publish extension
 
 # Install
-0. Build the extension
+0. Run `npm install` and build the extension
 1. Copy the file `dist/upload-limiter.js` to your projects `extensions/hooks` folder
 2. Copy the migrations from `src/_migrations` to your projects migration folder
 3. Run the migrations (See Docs)[https://docs.directus.io/extensions/migrations/#migrations-and-directus-schema]
