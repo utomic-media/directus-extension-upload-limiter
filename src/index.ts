@@ -1,67 +1,108 @@
 import { defineHook } from '@directus/extensions-sdk';
+import { updateUserUploadData } from './functions';
+import { usersFileDeletions, directusFile, modificationObject } from './types';
 
 
-interface uploadLimiterOptions {
-	numberOfFiles: number,
-	aggregatedFilessize: bigint,
-}
+export default defineHook(({ filter, action }, { services, exceptions, env }) => {
+	const { UsersService, FilesService } = services;
 
-
-export default defineHook(({ action }, { services, exceptions, env }) => {
-
-	// TODO: before upload: check if fits into the limit
+	// TODO: Case: filter upload: 
+	// run filter before upload and check if it would fit into the limit
 		// yes: upload file
 		// no: send error: "upload-limit: this file would exceed your upload limit"
 	
-	// TODO: move to db-config once a key-value store is available
+	// Note: move to db-config once a key-value store is available
 	// const globalUploadLimit = env.DIRECTUS_EXTENSION_UPLOAD_LIMITER_GLOBAL_LIMIT; // upload-limit in byte
 	
 
-	// after upload: update user column uploaded filedata
+	// CASE: AFTER UPLOAD
+	// update user column uploaded filedata with new data
 	action('files.upload', async ({ payload }, { schema, accountability }) => {
-		const { UsersService } = services;
-		const { ServiceUnavailableException } = exceptions;
-		
 		const uploadUser = accountability?.user;
 
-		// TODO: fetch unknonw user
-		if (uploadUser) { 
-			const usersService = new UsersService({
-				schema: schema,
-				accountability: {
-					admin: true, // TODO: find a better way to restrict this
-					...accountability
-				},
-			});
-			try {
-				const userItem = await usersService.readOne(uploadUser);
-				const currentUserUploadData: uploadLimiterOptions | null = JSON.parse(userItem.directus_extension_upload_limiter);
+		// TODO: fetch public uploads without user (key-value store required)
+		if (!uploadUser) return;
 
-				const numberOfFiles = (currentUserUploadData?.numberOfFiles)
-					? (currentUserUploadData.numberOfFiles + 1)
-					: 1;
-				
-				const aggregatedFilessize = (currentUserUploadData?.aggregatedFilessize)
-					? (currentUserUploadData.aggregatedFilessize + payload.filesize)
-					: payload.filesize;
-				
-				await usersService.updateOne(uploadUser, {
-					'directus_extension_upload_limiter': {
-						...currentUserUploadData,
-						numberOfFiles,
-						aggregatedFilessize,
-					}
-				});
-			} catch (error) {
-				throw new ServiceUnavailableException(error);
+		const usersService = new UsersService({
+			schema: schema,
+			accountability: {
+				admin: true, // TODO: find a better way to restrict this
+				...accountability
+			},
+		});
+		
+		try {
+			const modifications: modificationObject = {
+				modification: 'add',
+				numberOfFiles: 1,
+				aggregatedFilessize: BigInt(payload.filesize),
 			}
+
+			await updateUserUploadData(uploadUser, usersService, modifications);			
+		} catch (error) {
+			throw new Error(`File-Tracking failed: ${error}`);
 		}
+		
 	});
 
 
-	// TODO: after update: get filesize before, filesize after, calc diff and apply to value
+	// TODO: Case: update
+	// get filesize before, filesize after, calc diff and apply to value
 
-	// TODO: after delete: get old filesize and substract
-	
 
+	// CASE: BEFORE DELETE
+	// remove file and fizesize from extensions data (referred to the original userwho uploaded the file!)
+	filter('files.delete', async (payload, { collection }, { schema, accountability }) => {
+		const filesService = new FilesService({
+			schema: schema,
+			accountability: {
+				admin: true, // TODO: find a better way to restrict this
+				...accountability
+			},
+		});
+
+		const usersService = new UsersService({
+			schema: schema,
+			accountability: {
+				admin: true, // TODO: find a better way to restrict this
+				...accountability
+			},
+		});
+
+
+		try {
+			// get all files that should be deleted
+			const filesToDelete: directusFile[] = await filesService.readMany(payload);
+
+			// structure all changes to run them user-based instead of all one by one!
+			let fileChanges = {} as usersFileDeletions;
+
+			filesToDelete.forEach((file: directusFile) => {
+				if (!file.uploaded_by) return;
+
+				if (!fileChanges[file.uploaded_by]) {
+					fileChanges[file.uploaded_by] = {
+						numberOfFiles: 1,
+						aggregatedFilessize: BigInt(file.filesize),
+					};
+				} else {
+					fileChanges[file.uploaded_by]!.numberOfFiles += 1;
+					fileChanges[file.uploaded_by]!.aggregatedFilessize += BigInt(file.filesize);
+				}
+			});
+
+			// update changes aggregated by user
+			for (const user in fileChanges) {
+				const modificaion: modificationObject = {
+					modification: 'subtract',
+					numberOfFiles: fileChanges[user]!.numberOfFiles,
+					aggregatedFilessize: fileChanges[user]!.aggregatedFilessize,
+				}
+				await updateUserUploadData(user, usersService, modificaion);
+			}
+
+		} catch (error) {
+			throw new Error(`File-Tracking failed: ${error}`);
+		}
+	});
 });
