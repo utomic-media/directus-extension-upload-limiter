@@ -8,7 +8,7 @@
   ],
   "directus:extension": {
     "type": "hook",
-    "path": "index.js",
+    "path": "dist/index.js",
     "source": "src/index.ts",
     "host": "^9.5.2"
   },
