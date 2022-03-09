@@ -4,10 +4,19 @@
 > Hooks into create and delete actions of directus_files and calculates the upload-size
 >
 
+>
+> ❗️ This extension is still in beta and not prodution ready
+> ❗️ Due to limitations in upload filters it already can track uploads / deletions but not prevent uploads that do not fit into the limit
+>
+
+
+![The tracked data by the extension](/docs/assets/demo-screenshot.png)
+
 # Functions
 * Count number of files per user
 * Count aggregated filesizes of all existing files uploaded by a user
 * Updates number of files and filesize on file-deletion 
+* Saves data on a user-level (_directus_users >> directus_extension_upload_limiter_)
 * Limit uploads once a user-limit or a global limit is exceeded (_Coming soon!_)
 
 _Note: This extension works on a user level! If person A uploads a file and person B deletes it, the meta data of person A will be updated_
