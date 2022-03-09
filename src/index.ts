@@ -6,13 +6,20 @@ import { usersFileDeletions, directusFile, modificationObject } from './types';
 export default defineHook(({ filter, action }, { services, exceptions, env }) => {
 	const { UsersService, FilesService } = services;
 
-	// TODO: Case: filter upload: 
-	// run filter before upload and check if it would fit into the limit
-		// yes: upload file
-		// no: send error: "upload-limit: this file would exceed your upload limit"
+	// TODO: #5 Case: filter upload: 
+		// STATUS: blocked, no event emitted before upload
+		// @see https://github.com/directus/directus/discussions/12010
+
+		// TODO: add user based and global upload limit
+		//				status: blocked  no event is emmited before upload
+
+		// run filter before upload and check if it would fit into the limit
+			// yes: upload file
+			// no: send error: "upload-limit: this file would exceed your upload limit"
+		
+		// Note: move to db-config once a key-value store is available
+		// const globalUploadLimit = env.DIRECTUS_EXTENSION_UPLOAD_LIMITER_GLOBAL_LIMIT; // upload-limit in byte
 	
-	// Note: move to db-config once a key-value store is available
-	// const globalUploadLimit = env.DIRECTUS_EXTENSION_UPLOAD_LIMITER_GLOBAL_LIMIT; // upload-limit in byte
 	
 
 	// CASE: AFTER UPLOAD
@@ -20,7 +27,7 @@ export default defineHook(({ filter, action }, { services, exceptions, env }) =>
 	action('files.upload', async ({ payload }, { schema, accountability }) => {
 		const uploadUser = accountability?.user;
 
-		// TODO: fetch public uploads without user (key-value store required)
+		// TODO: #6 fetch public uploads without user (key-value store required)
 		if (!uploadUser) return;
 
 		const usersService = new UsersService({
@@ -46,8 +53,13 @@ export default defineHook(({ filter, action }, { services, exceptions, env }) =>
 	});
 
 
-	// TODO: Case: update
+	// Case: update
 	// get filesize before, filesize after, calc diff and apply to value
+	// filter('files.update', async (updatedItem, { keys, collection }, { schema, accountability }) => {
+		// TODO: #7 add update case
+		// 		blocking: currently the file size changes on update are not tracked by directus
+		// 		@see https://github.com/directus/directus/issues/12049
+	// })
 
 
 	// CASE: BEFORE DELETE
