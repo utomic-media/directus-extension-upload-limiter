@@ -63,10 +63,12 @@ export default defineHook(({ filter, action }, { services, exceptions, env }) =>
 
 		const usersService = new UsersService({
 			schema: schema,
-			accountability: {
-				admin: true, // TODO: find a better way to restrict this
-				...accountability
-			},
+			// NOTE: do not use user accountability here, as this file-service is already only executed if the user is allowed to delete a file
+			// otherwise you'll probably get an error about permissions on directus_activity in cases where a user is allowed to manage all data but not access all users and userdata
+			// accountability: {
+			// 	admin: true, // find a better way to restrict this
+				// ...accountability
+			// },
 		});
 
 

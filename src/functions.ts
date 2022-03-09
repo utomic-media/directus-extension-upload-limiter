@@ -1,10 +1,12 @@
 import { modificationObject, uploadLimiterOptions } from "./types";
 
 export async function updateUserUploadData(userID: string, usersService: any, modificationObject: modificationObject) { 
-  const userToUpdate = await usersService.readOne(userID);
-  const oldExtensionUserData: uploadLimiterOptions | null = JSON.parse(userToUpdate.directus_extension_upload_limiter);
+  const fetchedUserData = await usersService.readOne(userID, { fields: ['directus_extension_upload_limiter'] });
+  const oldExtensionUserData: uploadLimiterOptions | null = JSON.parse(fetchedUserData.directus_extension_upload_limiter);
 
-  console.log(oldExtensionUserData)
+  // DEBUG
+  // console.log(fetchedUserData);
+  // console.log(oldExtensionUserData)
 
   // Init values to track
   let numberOfFiles = oldExtensionUserData?.numberOfFiles || 0;
