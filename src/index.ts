@@ -32,12 +32,14 @@ export default defineHook(({ filter, action }, { services, exceptions, env }) =>
 
 		const usersService = new UsersService({
 			schema: schema,
-			// NOTE: do not use user accountability here, as this file-service is already only executed if the user is allowed to delete a file
-			// otherwise you'll probably get an error about permissions on directus_activity in cases where a user is allowed to manage all data but not access all users and userdata
-			// accountability: {
-			// 	admin: true, // find a better way to restrict this
-				// ...accountability
-			// },
+			// Note: as we need to update data in profiles that we're normally not allowed to
+			// 				we need to add admin accountability
+			// Note: look for a better way to programatically allow the accountability for
+			// 				the field "directus_extension_upload_limiter" field based on file permissions
+			accountability: {
+				...accountability,
+				admin: true, // find a better way to restrict this
+			},
 		});
 		
 		try {
@@ -69,20 +71,19 @@ export default defineHook(({ filter, action }, { services, exceptions, env }) =>
 	filter('files.delete', async (payload, { collection }, { schema, accountability }) => {
 		const filesService = new FilesService({
 			schema: schema,
-			accountability: {
-				admin: true, // TODO: find a better way to restrict this
-				...accountability
-			},
+			accountability: accountability,
 		});
 
 		const usersService = new UsersService({
 			schema: schema,
-			// NOTE: do not use user accountability here, as this file-service is already only executed if the user is allowed to delete a file
-			// otherwise you'll probably get an error about permissions on directus_activity in cases where a user is allowed to manage all data but not access all users and userdata
-			// accountability: {
-			// 	admin: true, // find a better way to restrict this
-				// ...accountability
-			// },
+			// Note: as we need to update data in profiles that we're normally not allowed to
+			// 				we need to add admin accountability
+			// Note: look for a better way to programatically allow the accountability for
+			// 				the field "directus_extension_upload_limiter" field based on file permissions
+			accountability: {
+				...accountability,
+				admin: true,
+			},
 		});
 
 
