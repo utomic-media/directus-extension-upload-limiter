@@ -41,7 +41,7 @@ export async function updateUserUploadData(userID: string, usersService: any, mo
       'directus_extension_upload_limiter': {
         ...oldExtensionUserData,
         numberOfFiles: numberOfFiles,
-        aggregatedFilessize: aggregatedFilessize,
+        aggregatedFilessize: aggregatedFilessize.toString(),
       }
 
     });

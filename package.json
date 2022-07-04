@@ -1,6 +1,6 @@
 {
   "name": "directus-extension-upload-limiter",
-  "version": "0.1.0",
+  "version": "0.1.3",
   "keywords": [
     "directus",
     "directus-extension",
@@ -10,7 +10,8 @@
     "type": "hook",
     "path": "dist/index.js",
     "source": "src/index.ts",
-    "host": "^9.5.2"
+    "host": "^9.5.2",
+    "sourcemap": true
   },
   "scripts": {
     "build": "directus-extension build",
